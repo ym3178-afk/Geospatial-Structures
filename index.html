@@ -17,7 +17,11 @@
     <div id="map" aria-label="Interactive map of restaurant access around Columbia University"></div>
 
     <header class="title-panel panel">
-      <p class="eyebrow">Geospatial Structures · Mapbox GL JS</p>
+      <div class="title-topline">
+        <p class="eyebrow">Geospatial Structures · Mapbox GL JS</p>
+        <span id="data-source-badge" class="source-badge">DATA —</span>
+      </div>
+
       <h1>The Last<br><em>800 Meters</em></h1>
       <p class="intro">
         Restaurant access and potential last-mile delivery infrastructure around Columbia University.
@@ -26,16 +30,21 @@
       <div class="headline-metrics" aria-label="Visible-data summary">
         <div>
           <strong id="visible-count">—</strong>
-          <span>visible restaurants</span>
+          <span>restaurants in view</span>
         </div>
         <div>
           <strong id="median-distance">—</strong>
           <span>median campus distance</span>
         </div>
         <div>
-          <strong id="grade-a-share">—</strong>
-          <span>grade A share</span>
+          <strong id="cuisine-diversity">—</strong>
+          <span>cuisine groups represented</span>
         </div>
+      </div>
+
+      <div class="research-strip">
+        <span>Research question</span>
+        <p>How do distance, cuisine concentration, and Broadway–Amsterdam street corridors structure potential last-mile food access to Columbia?</p>
       </div>
     </header>
 
@@ -48,7 +57,7 @@
         <button id="reset-map" class="text-button" type="button">Reset</button>
       </div>
 
-      <div class="control-grid">
+      <div class="control-grid control-grid-primary">
         <div class="control-block">
           <label for="cuisine-filter">Cuisine group</label>
           <select id="cuisine-filter">
@@ -73,17 +82,7 @@
           </select>
         </div>
 
-        <div class="control-block">
-          <label for="grade-filter">Inspection status</label>
-          <select id="grade-filter">
-            <option value="all">All records</option>
-            <option value="A">Grade A</option>
-            <option value="attention">B / C / closed</option>
-            <option value="ungraded">Not graded</option>
-          </select>
-        </div>
-
-        <div class="control-block">
+        <div class="control-block control-block-wide">
           <label for="corridor-filter">Street context</label>
           <select id="corridor-filter">
             <option value="all">All locations</option>
@@ -94,6 +93,19 @@
         </div>
       </div>
 
+      <details class="advanced-filters">
+        <summary>Advanced inspection filter</summary>
+        <div class="control-block advanced-control">
+          <label for="grade-filter">Inspection status</label>
+          <select id="grade-filter">
+            <option value="all">All records</option>
+            <option value="A">Grade A</option>
+            <option value="attention">B / C / closed</option>
+            <option value="ungraded">Not graded</option>
+          </select>
+        </div>
+      </details>
+
       <div class="mode-row" aria-label="Map display mode">
         <button class="mode-button is-active" data-mode="points" aria-pressed="true" type="button">Restaurant points</button>
         <button class="mode-button" data-mode="density" aria-pressed="false" type="button">Density field</button>
@@ -102,19 +114,22 @@
       <div class="button-row">
         <button id="campus-view" type="button">Campus view</button>
         <button id="district-view" type="button">District view</button>
-        <button id="export-data" type="button">Export visible GeoJSON</button>
+        <button id="presentation-mode" class="presentation-button" type="button">Presentation mode</button>
       </div>
 
       <label class="toggle-row">
         <input id="toggle-context" type="checkbox" checked>
-        <span>Show access points and street corridors</span>
+        <span>Show access points and analytical corridors</span>
       </label>
 
       <p id="status" class="status" role="status">Waiting for Mapbox…</p>
     </section>
 
     <aside class="legend-panel panel" aria-label="Map legend">
-      <p class="legend-title">Cuisine groups</p>
+      <div class="legend-header">
+        <p class="legend-title">Cuisine groups</p>
+        <span class="legend-focus">800 M FOCUS</span>
+      </div>
       <div class="legend-grid">
         <span><i style="--swatch:#e4572e"></i>Pizza</span>
         <span><i style="--swatch:#8a5a44"></i>Coffee & bakery</span>
@@ -123,33 +138,18 @@
         <span><i style="--swatch:#dca62a"></i>American & fast food</span>
         <span><i style="--swatch:#77777f"></i>Other</span>
       </div>
-      <div class="legend-rule"><i class="ring-line"></i><span>Distance bands: 400 / 800 / 1,200 m</span></div>
-      <div class="legend-rule"><i class="corridor-line"></i><span>Analytical street corridor</span></div>
-      <div class="legend-rule"><i class="gate-symbol"></i><span>Approximate campus access point</span></div>
-      <p class="legend-note">Point size decreases with straight-line distance from the campus anchor.</p>
+      <div class="legend-rule focus-rule"><i class="focus-ring-line"></i><span>800 m analytical focus</span></div>
+      <div class="legend-rule"><i class="ring-line"></i><span>400 m / 1,200 m reference bands</span></div>
+      <div class="legend-rule"><i class="corridor-line"></i><span>Broadway / Amsterdam proxy corridor</span></div>
+      <p class="legend-note">Distance is straight-line distance from the campus anchor—not a rider route or delivery-time estimate.</p>
     </aside>
 
-    <aside class="thesis-panel panel">
-      <p class="eyebrow">Research question</p>
-      <p class="thesis">
-        How do distance, cuisine concentration, and Broadway–Amsterdam street corridors structure potential last-mile food access to Columbia?
-      </p>
-      <p class="method-note">
-        Restaurant locations come from NYC DOHMH inspection records. Distance bands and corridor assignments are analytical proxies—not platform delivery zones, rider routes, or travel-time predictions.
-      </p>
-    </aside>
+    <div class="map-caption">
+      <span>NYC DOHMH restaurant records · local fallback included for reliability</span>
+      <span>Yizhang Mu · Columbia GSAPP CDP</span>
+    </div>
 
-    <section id="token-panel" class="token-panel panel" hidden>
-      <p class="eyebrow">Mapbox setup</p>
-      <h2>Paste a public access token</h2>
-      <p>Use the complete token beginning with <strong>pk.</strong>. It is saved only in this browser for local testing.</p>
-      <div class="token-form">
-        <input id="token-input" type="password" autocomplete="off" placeholder="pk.eyJ1Ijo…">
-        <button id="start-map" type="button">Start map</button>
-      </div>
-      <p id="token-error" class="token-error" aria-live="polite"></p>
-      <p class="token-help">Before publishing, paste the same public token into <code>mapBox_Sketch_03.js</code>.</p>
-    </section>
+    <button id="exit-presentation" class="exit-presentation" type="button" hidden>Exit presentation</button>
 
     <section id="error-panel" class="error-panel panel" hidden>
       <p class="eyebrow">Loading error</p>

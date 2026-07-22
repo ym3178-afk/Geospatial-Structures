@@ -1,0 +1,760 @@
+{
+  "type": "FeatureCollection",
+  "name": "Columbia restaurant offline fallback",
+  "metadata": {
+    "note": "Curated offline fallback points for presentation continuity when the live NYC Open Data API is unavailable. Locations are approximate and inspection fields are intentionally blank. The live map prefers current NYC DOHMH records.",
+    "created_for": "Columbia GSAPP CDP Geospatial Structures assignment"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-001",
+        "dba": "Koronet Pizza",
+        "boro": "Manhattan",
+        "building": "2848",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "Pizza",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.966,
+          40.80475
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-002",
+        "dba": "Community Food & Juice",
+        "boro": "Manhattan",
+        "building": "2893",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "American",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9652,
+          40.80575
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-003",
+        "dba": "Tom's Restaurant",
+        "boro": "Manhattan",
+        "building": "2880",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "American",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9655,
+          40.8054
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-004",
+        "dba": "Mel's Burger Bar",
+        "boro": "Manhattan",
+        "building": "2850",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "American",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9658,
+          40.8049
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-005",
+        "dba": "Le Monde",
+        "boro": "Manhattan",
+        "building": "2885",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "French",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9653,
+          40.8056
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-006",
+        "dba": "The Heights Bar & Grill",
+        "boro": "Manhattan",
+        "building": "2867",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "American",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9656,
+          40.80512
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-007",
+        "dba": "Milano Market Westside",
+        "boro": "Manhattan",
+        "building": "2892",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "Italian",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.965,
+          40.80586
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-008",
+        "dba": "Wu + Nussbaum",
+        "boro": "Manhattan",
+        "building": "2897",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "Jewish/Kosher",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9649,
+          40.80602
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-009",
+        "dba": "Shake Shack Morningside",
+        "boro": "Manhattan",
+        "building": "2957",
+        "street": "BROADWAY",
+        "zipcode": "10027",
+        "cuisine_description": "Hamburgers",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9639,
+          40.80822
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-010",
+        "dba": "Pret A Manger",
+        "boro": "Manhattan",
+        "building": "2955",
+        "street": "BROADWAY",
+        "zipcode": "10027",
+        "cuisine_description": "Sandwiches",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.964,
+          40.8081
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-011",
+        "dba": "Joe Coffee Company",
+        "boro": "Manhattan",
+        "building": "550",
+        "street": "WEST 120 STREET",
+        "zipcode": "10027",
+        "cuisine_description": "Coffee/Tea",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9615,
+          40.81045
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-012",
+        "dba": "Friedman's at Columbia",
+        "boro": "Manhattan",
+        "building": "1185",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10027",
+        "cuisine_description": "American",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9597,
+          40.80885
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-013",
+        "dba": "The Hungarian Pastry Shop",
+        "boro": "Manhattan",
+        "building": "1030",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10025",
+        "cuisine_description": "Bakery Products/Desserts",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9631,
+          40.80355
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-014",
+        "dba": "V & T Pizzeria",
+        "boro": "Manhattan",
+        "building": "1024",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10025",
+        "cuisine_description": "Pizza",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9633,
+          40.8033
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-015",
+        "dba": "Marlow Bistro",
+        "boro": "Manhattan",
+        "building": "1018",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10025",
+        "cuisine_description": "Mediterranean",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9635,
+          40.80305
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-016",
+        "dba": "Roti Roll Bombay Frankie",
+        "boro": "Manhattan",
+        "building": "994",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10025",
+        "cuisine_description": "Indian",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9641,
+          40.80225
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-017",
+        "dba": "Thai Market",
+        "boro": "Manhattan",
+        "building": "960",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10025",
+        "cuisine_description": "Thai",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9648,
+          40.8009
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-018",
+        "dba": "Saiguette",
+        "boro": "Manhattan",
+        "building": "935",
+        "street": "COLUMBUS AVENUE",
+        "zipcode": "10025",
+        "cuisine_description": "Vietnamese",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.962,
+          40.8001
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-019",
+        "dba": "Massawa",
+        "boro": "Manhattan",
+        "building": "1239",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10027",
+        "cuisine_description": "Ethiopian",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.958,
+          40.81095
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-020",
+        "dba": "Max Soha",
+        "boro": "Manhattan",
+        "building": "1274",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10027",
+        "cuisine_description": "Italian",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9572,
+          40.81205
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-021",
+        "dba": "Pisticci",
+        "boro": "Manhattan",
+        "building": "125",
+        "street": "LA SALLE STREET",
+        "zipcode": "10027",
+        "cuisine_description": "Italian",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.959,
+          40.81455
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-022",
+        "dba": "Jin Ramen",
+        "boro": "Manhattan",
+        "building": "3183",
+        "street": "BROADWAY",
+        "zipcode": "10027",
+        "cuisine_description": "Japanese",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9587,
+          40.81515
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-023",
+        "dba": "The Expat",
+        "boro": "Manhattan",
+        "building": "64",
+        "street": "TIEMANN PLACE",
+        "zipcode": "10027",
+        "cuisine_description": "Southeast Asian",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.958,
+          40.81545
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-024",
+        "dba": "Dinosaur Bar-B-Que",
+        "boro": "Manhattan",
+        "building": "700",
+        "street": "WEST 125 STREET",
+        "zipcode": "10027",
+        "cuisine_description": "Barbecue",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9612,
+          40.81805
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-025",
+        "dba": "Mama's TOO!",
+        "boro": "Manhattan",
+        "building": "2750",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "Pizza",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9679,
+          40.8002
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-026",
+        "dba": "Absolute Bagels",
+        "boro": "Manhattan",
+        "building": "2788",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "Bagels/Pretzels",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9672,
+          40.8015
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-027",
+        "dba": "108 Food Dried Hot Pot",
+        "boro": "Manhattan",
+        "building": "2794",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "Chinese",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.967,
+          40.80175
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-028",
+        "dba": "Ayat Hind's Hall",
+        "boro": "Manhattan",
+        "building": "941",
+        "street": "AMSTERDAM AVENUE",
+        "zipcode": "10025",
+        "cuisine_description": "Middle Eastern",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9653,
+          40.8002
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-029",
+        "dba": "Hex & Company",
+        "boro": "Manhattan",
+        "building": "2911",
+        "street": "BROADWAY",
+        "zipcode": "10025",
+        "cuisine_description": "American",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9647,
+          40.80635
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "camis": "fallback-030",
+        "dba": "Bo’s Bagels",
+        "boro": "Manhattan",
+        "building": "235",
+        "street": "WEST 116 STREET",
+        "zipcode": "10026",
+        "cuisine_description": "Bagels/Pretzels",
+        "inspection_date": "",
+        "grade": "",
+        "score": "",
+        "action": "",
+        "record_date": "",
+        "source_mode": "curated_offline_fallback"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9579,
+          40.80495
+        ]
+      }
+    }
+  ]
+}

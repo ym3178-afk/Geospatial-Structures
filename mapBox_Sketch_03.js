@@ -1,25 +1,33 @@
 "use strict";
 
-// Paste your complete PUBLIC Mapbox token here before publishing to GitHub Pages.
-// It must begin with "pk.". Never paste a secret token beginning with "sk.".
-const MAPBOX_TOKEN = "PASTE_YOUR_PUBLIC_MAPBOX_TOKEN_HERE";
+// Public Mapbox token used by this client-side Mapbox GL JS project.
+// Never replace it with a secret token beginning with "sk.".
+const MAPBOX_TOKEN = "pk.eyJ1IjoiZWxpYW4zMTc4IiwiYSI6ImNtcnZlZGpkdDBvbXgyd3B2eGMyajdseDUifQ.GlgugnGUmcRzqOLIaF_16w";
 
 const CAMPUS = [-73.9626, 40.8075];
 const CONTEXT_PATH = "columbia_delivery_context.geojson";
+const FALLBACK_RESTAURANTS_PATH = "columbia_restaurants_fallback.geojson";
 
-// NYC Open Data: DOHMH New York City Restaurant Inspection Results.
-// The request is ordered newest-first, then deduplicated by CAMIS in the browser.
-const RESTAURANT_API =
-  "https://data.cityofnewyork.us/resource/43nn-pn8j.geojson" +
-  "?$limit=50000&$order=inspection_date%20DESC&$where=" +
-  encodeURIComponent("zipcode in ('10025','10026','10027','10031') AND latitude IS NOT NULL AND longitude IS NOT NULL");
+// A smaller, selected request is more reliable than downloading every inspection field.
+const RESTAURANT_API_BASE = "https://data.cityofnewyork.us/resource/43nn-pn8j.json";
+const RESTAURANT_API_PARAMS = new URLSearchParams({
+  "$select": [
+    "camis", "dba", "boro", "building", "street", "zipcode",
+    "cuisine_description", "inspection_date", "action", "score", "grade",
+    "record_date", "latitude", "longitude"
+  ].join(","),
+  "$limit": "5000",
+  "$order": "inspection_date DESC",
+  "$where": "zipcode in ('10025','10026','10027','10031') AND latitude IS NOT NULL AND longitude IS NOT NULL"
+});
+const RESTAURANT_API = `${RESTAURANT_API_BASE}?${RESTAURANT_API_PARAMS.toString()}`;
 
 const CAMPUS_VIEW = {
   center: CAMPUS,
   zoom: 14.25,
-  pitch: 36,
+  pitch: 34,
   bearing: -12,
-  duration: 1400
+  duration: 1350
 };
 
 const DISTRICT_VIEW = {
@@ -27,7 +35,7 @@ const DISTRICT_VIEW = {
   zoom: 13.15,
   pitch: 0,
   bearing: 0,
-  duration: 1500
+  duration: 1450
 };
 
 const FOOD_COLORS = {
@@ -47,24 +55,40 @@ const state = {
   selectedRadius: 800,
   selectedGrade: "all",
   selectedCorridor: "all",
-  displayMode: "points"
+  displayMode: "points",
+  dataMode: "unknown",
+  dataWarning: ""
 };
 
 const statusElement = document.getElementById("status");
-const tokenPanel = document.getElementById("token-panel");
-const tokenInput = document.getElementById("token-input");
-const tokenError = document.getElementById("token-error");
+const dataSourceBadge = document.getElementById("data-source-badge");
 const errorPanel = document.getElementById("error-panel");
 const errorMessage = document.getElementById("error-message");
+const exitPresentationButton = document.getElementById("exit-presentation");
 
-function setStatus(message) {
+function setStatus(message, warning = false) {
   statusElement.textContent = message;
+  statusElement.classList.toggle("is-warning", warning);
 }
 
-function showError(message) {
+function setDataMode(mode) {
+  state.dataMode = mode;
+  dataSourceBadge.classList.remove("is-live", "is-fallback");
+  if (mode === "live") {
+    dataSourceBadge.textContent = "LIVE NYC OPEN DATA";
+    dataSourceBadge.classList.add("is-live");
+  } else if (mode === "fallback") {
+    dataSourceBadge.textContent = "OFFLINE FALLBACK";
+    dataSourceBadge.classList.add("is-fallback");
+  } else {
+    dataSourceBadge.textContent = "DATA —";
+  }
+}
+
+function showFatalError(message) {
   errorMessage.textContent = message;
   errorPanel.hidden = false;
-  setStatus("Map error — see the message in the center of the page.");
+  setStatus("Map error — see the message in the center of the page.", true);
 }
 
 function validToken(token) {
@@ -88,19 +112,38 @@ function toRadians(degrees) {
   return degrees * Math.PI / 180;
 }
 
+function toDegrees(radians) {
+  return radians * 180 / Math.PI;
+}
+
 function distanceMeters(a, b) {
   const earthRadius = 6371000;
   const latitude1 = toRadians(a[1]);
   const latitude2 = toRadians(b[1]);
   const latitudeDelta = toRadians(b[1] - a[1]);
   const longitudeDelta = toRadians(b[0] - a[0]);
-
   const haversine =
     Math.sin(latitudeDelta / 2) ** 2 +
     Math.cos(latitude1) * Math.cos(latitude2) *
     Math.sin(longitudeDelta / 2) ** 2;
-
   return 2 * earthRadius * Math.asin(Math.sqrt(haversine));
+}
+
+function destinationPoint(center, radiusMeters, bearingDegrees) {
+  const earthRadius = 6371000;
+  const angularDistance = radiusMeters / earthRadius;
+  const bearing = toRadians(bearingDegrees);
+  const latitude = toRadians(center[1]);
+  const longitude = toRadians(center[0]);
+  const destinationLatitude = Math.asin(
+    Math.sin(latitude) * Math.cos(angularDistance) +
+    Math.cos(latitude) * Math.sin(angularDistance) * Math.cos(bearing)
+  );
+  const destinationLongitude = longitude + Math.atan2(
+    Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latitude),
+    Math.cos(angularDistance) - Math.sin(latitude) * Math.sin(destinationLatitude)
+  );
+  return [toDegrees(destinationLongitude), toDegrees(destinationLatitude)];
 }
 
 function pointToSegmentMeters(point, start, end) {
@@ -129,43 +172,23 @@ function pointToLineMeters(point, coordinates) {
 
 function circleFeature(center, radiusMeters, steps = 96) {
   const coordinates = [];
-  const earthRadius = 6371000;
-  const latitude = toRadians(center[1]);
-  const longitude = toRadians(center[0]);
-  const angularDistance = radiusMeters / earthRadius;
-
   for (let step = 0; step <= steps; step += 1) {
-    const bearing = (step / steps) * Math.PI * 2;
-    const destinationLatitude = Math.asin(
-      Math.sin(latitude) * Math.cos(angularDistance) +
-      Math.cos(latitude) * Math.sin(angularDistance) * Math.cos(bearing)
-    );
-    const destinationLongitude = longitude + Math.atan2(
-      Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latitude),
-      Math.cos(angularDistance) - Math.sin(latitude) * Math.sin(destinationLatitude)
-    );
-
-    coordinates.push([
-      destinationLongitude * 180 / Math.PI,
-      destinationLatitude * 180 / Math.PI
-    ]);
+    coordinates.push(destinationPoint(center, radiusMeters, step / steps * 360));
   }
-
   return {
     type: "Feature",
-    properties: { radius_m: radiusMeters, label: `${radiusMeters.toLocaleString()} m` },
+    properties: { radius_m: radiusMeters, label: radiusMeters === 800 ? "800 M FOCUS" : `${radiusMeters.toLocaleString()} m` },
     geometry: { type: "Polygon", coordinates: [coordinates] }
   };
 }
 
 function classifyCuisine(cuisine) {
   const value = String(cuisine || "").toLowerCase();
-
   if (value.includes("pizza")) return "Pizza";
-  if (["coffee", "café", "cafe", "bakery", "donut", "tea", "juice", "dessert", "ice cream"].some(term => value.includes(term))) {
+  if (["coffee", "café", "cafe", "bakery", "donut", "tea", "juice", "dessert", "ice cream", "bagel", "pastry"].some(term => value.includes(term))) {
     return "Coffee & Bakery";
   }
-  if (["chinese", "japanese", "korean", "thai", "indian", "pakistani", "vietnamese", "asian", "filipino", "indonesian", "bangladeshi"].some(term => value.includes(term))) {
+  if (["chinese", "japanese", "korean", "thai", "indian", "pakistani", "vietnamese", "asian", "filipino", "indonesian", "bangladeshi", "southeast asian"].some(term => value.includes(term))) {
     return "Asian";
   }
   if (["latin", "mexican", "caribbean", "spanish", "cuban", "peruvian", "colombian", "dominican", "brazilian", "ecuadorian"].some(term => value.includes(term))) {
@@ -222,15 +245,27 @@ function assignSpatialContext(coordinates) {
   };
 }
 
-function processRestaurantData(rawData) {
-  const latestByRestaurant = new Map();
+function recordsFromDataset(rawData) {
+  if (Array.isArray(rawData)) return rawData;
+  if (rawData?.type === "FeatureCollection") {
+    return (rawData.features || []).map(feature => ({
+      ...(feature.properties || {}),
+      longitude: feature.geometry?.coordinates?.[0],
+      latitude: feature.geometry?.coordinates?.[1]
+    }));
+  }
+  return [];
+}
 
-  for (const feature of rawData.features || []) {
-    const properties = { ...(feature.properties || {}) };
+function processRestaurantData(rawData, sourceMode) {
+  const latestByRestaurant = new Map();
+  const records = recordsFromDataset(rawData);
+
+  for (const record of records) {
+    const properties = { ...record };
     const longitude = Number(properties.longitude);
     const latitude = Number(properties.latitude);
-    const restaurantId = properties.camis;
-
+    const restaurantId = properties.camis || `${properties.dba}-${longitude}-${latitude}`;
     if (!restaurantId || !Number.isFinite(longitude) || !Number.isFinite(latitude)) continue;
 
     const coordinates = [longitude, latitude];
@@ -242,10 +277,12 @@ function processRestaurantData(rawData) {
     if (previous && previous.inspectionTime >= inspectionTime) continue;
 
     Object.assign(properties, {
+      camis: restaurantId,
       food_group: classifyCuisine(properties.cuisine_description),
       distance_m: campusDistance,
       grade_category: gradeCategory(properties),
       inspection_timestamp: inspectionTime,
+      source_mode: sourceMode,
       ...assignSpatialContext(coordinates)
     });
 
@@ -293,14 +330,14 @@ function median(values) {
 function updateVisibleMetrics() {
   const visible = visibleRestaurants();
   const medianDistance = median(visible.map(feature => Number(feature.properties.distance_m)).filter(Number.isFinite));
-  const graded = visible.filter(feature => ["A", "attention"].includes(feature.properties.grade_category));
-  const gradeA = graded.filter(feature => feature.properties.grade_category === "A").length;
-  const gradeAShare = graded.length ? Math.round(gradeA / graded.length * 100) : null;
+  const cuisineDiversity = new Set(visible.map(feature => feature.properties.food_group).filter(Boolean)).size;
 
   document.getElementById("visible-count").textContent = visible.length.toLocaleString();
   document.getElementById("median-distance").textContent = medianDistance === null ? "—" : `${medianDistance.toLocaleString()} m`;
-  document.getElementById("grade-a-share").textContent = gradeAShare === null ? "—" : `${gradeAShare}%`;
-  setStatus(`${visible.length.toLocaleString()} restaurants visible · click a point for details.`);
+  document.getElementById("cuisine-diversity").textContent = cuisineDiversity ? cuisineDiversity.toLocaleString() : "—";
+
+  const baseMessage = `${visible.length.toLocaleString()} restaurants visible · click a point for details.`;
+  setStatus(state.dataWarning ? `${baseMessage} ${state.dataWarning}` : baseMessage, Boolean(state.dataWarning));
 }
 
 function updateFilters() {
@@ -348,15 +385,21 @@ function add3DBuildings(map) {
       "fill-extrusion-color": "#d4d7d1",
       "fill-extrusion-height": ["get", "height"],
       "fill-extrusion-base": ["get", "min_height"],
-      "fill-extrusion-opacity": 0.64
+      "fill-extrusion-opacity": 0.57
     }
   }, labelLayer ? labelLayer.id : undefined);
 }
 
-async function fetchJSON(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}`);
-  return response.json();
+async function fetchJSON(url, timeoutMilliseconds = 9000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMilliseconds);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}`);
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function addMapLayers(map, contextData, restaurants) {
@@ -364,8 +407,17 @@ function addMapLayers(map, contextData, restaurants) {
     type: "FeatureCollection",
     features: [400, 800, 1200].map(radius => circleFeature(CAMPUS, radius))
   };
+  const radiusLabels = {
+    type: "FeatureCollection",
+    features: [400, 800, 1200].map(radius => ({
+      type: "Feature",
+      properties: { radius_m: radius, label: radius === 800 ? "800 M FOCUS" : `${radius.toLocaleString()} M` },
+      geometry: { type: "Point", coordinates: destinationPoint(CAMPUS, radius, 72) }
+    }))
+  };
 
   map.addSource("delivery-rings", { type: "geojson", data: radiusData });
+  map.addSource("delivery-ring-labels", { type: "geojson", data: radiusLabels });
   map.addSource("delivery-context", { type: "geojson", data: contextData });
   map.addSource("restaurant-data", {
     type: "geojson",
@@ -379,7 +431,7 @@ function addMapLayers(map, contextData, restaurants) {
     filter: ["==", ["get", "feature_type"], "campus_boundary"],
     paint: {
       "fill-color": "#244a3c",
-      "fill-opacity": 0.055,
+      "fill-opacity": 0.045,
       "fill-outline-color": "#244a3c"
     }
   });
@@ -389,38 +441,63 @@ function addMapLayers(map, contextData, restaurants) {
     type: "fill",
     source: "delivery-rings",
     paint: {
-      "fill-color": [
-        "match", ["get", "radius_m"],
-        400, "#e4572e",
-        800, "#dca62a",
-        1200, "#244a3c",
-        "#244a3c"
-      ],
-      "fill-opacity": [
-        "match", ["get", "radius_m"],
-        400, 0.032,
-        800, 0.022,
-        1200, 0.012,
-        0.01
-      ]
+      "fill-color": ["case", ["==", ["get", "radius_m"], 800], "#e4572e", "#244a3c"],
+      "fill-opacity": ["case", ["==", ["get", "radius_m"], 800], 0.035, 0.006]
     }
   });
 
   map.addLayer({
-    id: "delivery-ring-lines",
+    id: "delivery-ring-reference-lines",
     type: "line",
     source: "delivery-rings",
+    filter: ["!=", ["get", "radius_m"], 800],
     paint: {
-      "line-color": [
-        "match", ["get", "radius_m"],
-        400, "#e4572e",
-        800, "#9a7421",
-        1200, "#244a3c",
-        "#244a3c"
-      ],
-      "line-width": 1.15,
-      "line-dasharray": [3, 2],
-      "line-opacity": 0.72
+      "line-color": "#244a3c",
+      "line-width": 0.9,
+      "line-dasharray": [3, 3],
+      "line-opacity": 0.46
+    }
+  });
+
+  map.addLayer({
+    id: "delivery-ring-focus-halo",
+    type: "line",
+    source: "delivery-rings",
+    filter: ["==", ["get", "radius_m"], 800],
+    paint: {
+      "line-color": "#e4572e",
+      "line-width": 7,
+      "line-blur": 4,
+      "line-opacity": 0.13
+    }
+  });
+
+  map.addLayer({
+    id: "delivery-ring-focus",
+    type: "line",
+    source: "delivery-rings",
+    filter: ["==", ["get", "radius_m"], 800],
+    paint: {
+      "line-color": "#e4572e",
+      "line-width": 2.4,
+      "line-opacity": 0.92
+    }
+  });
+
+  map.addLayer({
+    id: "delivery-ring-labels",
+    type: "symbol",
+    source: "delivery-ring-labels",
+    layout: {
+      "text-field": ["get", "label"],
+      "text-size": ["case", ["==", ["get", "radius_m"], 800], 10, 8],
+      "text-letter-spacing": 0.08,
+      "text-allow-overlap": true
+    },
+    paint: {
+      "text-color": ["case", ["==", ["get", "radius_m"], 800], "#e4572e", "#244a3c"],
+      "text-halo-color": "rgba(244,239,229,.96)",
+      "text-halo-width": 1.4
     }
   });
 
@@ -432,9 +509,9 @@ function addMapLayers(map, contextData, restaurants) {
     layout: { "line-cap": "round", "line-join": "round" },
     paint: {
       "line-color": "#18211e",
-      "line-width": ["interpolate", ["linear"], ["zoom"], 12, 1.3, 16, 3.2],
+      "line-width": ["interpolate", ["linear"], ["zoom"], 12, 1.1, 16, 2.8],
       "line-dasharray": [1.2, 1.8],
-      "line-opacity": 0.48
+      "line-opacity": 0.4
     }
   });
 
@@ -448,15 +525,15 @@ function addMapLayers(map, contextData, restaurants) {
       "heatmap-weight": ["interpolate", ["linear"], ["get", "distance_m"], 0, 1, 1800, 0.25],
       "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 12, 0.7, 16, 1.6],
       "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 12, 15, 16, 32],
-      "heatmap-opacity": 0.78,
+      "heatmap-opacity": 0.75,
       "heatmap-color": [
         "interpolate", ["linear"], ["heatmap-density"],
         0, "rgba(244,239,229,0)",
-        0.2, "rgba(39,111,191,0.35)",
-        0.42, "rgba(111,143,58,0.52)",
-        0.65, "rgba(220,166,42,0.68)",
-        0.86, "rgba(228,87,46,0.84)",
-        1, "rgba(112,33,22,0.96)"
+        0.2, "rgba(39,111,191,0.32)",
+        0.42, "rgba(111,143,58,0.48)",
+        0.65, "rgba(220,166,42,0.64)",
+        0.86, "rgba(228,87,46,0.82)",
+        1, "rgba(112,33,22,0.94)"
       ]
     }
   });
@@ -470,11 +547,11 @@ function addMapLayers(map, contextData, restaurants) {
     paint: {
       "circle-radius": [
         "+",
-        ["interpolate", ["linear"], ["get", "distance_m"], 0, 9, 400, 8, 800, 6.4, 1200, 5, 1800, 4],
-        2.5
+        ["interpolate", ["linear"], ["get", "distance_m"], 0, 8.5, 400, 7.7, 800, 6.2, 1200, 4.9, 1800, 3.8],
+        2.3
       ],
       "circle-color": "rgba(244,239,229,0.76)",
-      "circle-blur": 0.18
+      "circle-blur": 0.16
     }
   });
 
@@ -483,19 +560,19 @@ function addMapLayers(map, contextData, restaurants) {
     type: "circle",
     source: "restaurant-data",
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["get", "distance_m"], 0, 9, 400, 8, 800, 6.4, 1200, 5, 1800, 4],
+      "circle-radius": ["interpolate", ["linear"], ["get", "distance_m"], 0, 8.5, 400, 7.7, 800, 6.2, 1200, 4.9, 1800, 3.8],
       "circle-color": [
         "match", ["get", "food_group"],
-        "Pizza", FOOD_COLORS["Pizza"],
+        "Pizza", FOOD_COLORS.Pizza,
         "Coffee & Bakery", FOOD_COLORS["Coffee & Bakery"],
-        "Asian", FOOD_COLORS["Asian"],
+        "Asian", FOOD_COLORS.Asian,
         "Latin & Caribbean", FOOD_COLORS["Latin & Caribbean"],
         "American & Fast Food", FOOD_COLORS["American & Fast Food"],
-        FOOD_COLORS["Other"]
+        FOOD_COLORS.Other
       ],
-      "circle-opacity": 0.9,
-      "circle-stroke-width": ["case", ["==", ["get", "grade_category"], "attention"], 2.2, 1.15],
-      "circle-stroke-color": ["case", ["==", ["get", "grade_category"], "attention"], "#8e2e20", "#f4efe5"]
+      "circle-opacity": 0.91,
+      "circle-stroke-width": 1.1,
+      "circle-stroke-color": "#f4efe5"
     }
   });
 
@@ -503,19 +580,19 @@ function addMapLayers(map, contextData, restaurants) {
     id: "restaurant-labels",
     type: "symbol",
     source: "restaurant-data",
-    minzoom: 15.3,
+    minzoom: 15.35,
     layout: {
       "text-field": ["get", "dba"],
-      "text-size": 9,
-      "text-offset": [0, 1.55],
+      "text-size": 8.6,
+      "text-offset": [0, 1.5],
       "text-anchor": "top",
-      "text-max-width": 10,
+      "text-max-width": 9,
       "text-allow-overlap": false
     },
     paint: {
       "text-color": "#18211e",
       "text-halo-color": "rgba(244,239,229,0.97)",
-      "text-halo-width": 1.3
+      "text-halo-width": 1.25
     }
   });
 
@@ -525,9 +602,8 @@ function addMapLayers(map, contextData, restaurants) {
     source: "delivery-context",
     filter: ["==", ["get", "feature_type"], "access_gate"],
     layout: {
-      "icon-image": "",
       "text-field": "◆",
-      "text-size": 12,
+      "text-size": 11,
       "text-allow-overlap": true
     },
     paint: {
@@ -543,7 +619,7 @@ function addMapLayers(map, contextData, restaurants) {
     source: "delivery-context",
     filter: ["==", ["get", "feature_type"], "campus_anchor"],
     paint: {
-      "circle-radius": 8,
+      "circle-radius": 7.5,
       "circle-color": "#18211e",
       "circle-stroke-color": "#f4efe5",
       "circle-stroke-width": 3
@@ -557,7 +633,7 @@ function addMapLayers(map, contextData, restaurants) {
     filter: ["==", ["get", "feature_type"], "campus_anchor"],
     layout: {
       "text-field": "COLUMBIA UNIVERSITY",
-      "text-size": 10,
+      "text-size": 9.5,
       "text-offset": [0, -1.7],
       "text-anchor": "bottom",
       "text-letter-spacing": 0.11
@@ -568,6 +644,41 @@ function addMapLayers(map, contextData, restaurants) {
       "text-halo-width": 1.5
     }
   });
+}
+
+function buildPopupHTML(feature) {
+  const p = feature.properties;
+  const address = [p.building, p.street, p.zipcode].filter(Boolean).join(" ");
+  const inspectionDate = p.inspection_date
+    ? new Date(p.inspection_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    : "Not included in fallback";
+  const sourceLabel = p.source_mode === "live" ? "NYC DOHMH live record" : "Curated offline fallback";
+
+  return `
+    <article class="popup">
+      <p class="popup-kicker">${escapeHTML(p.food_group)} · ${escapeHTML(p.corridor_proxy)}</p>
+      <h3>${escapeHTML(p.dba || "Restaurant")}</h3>
+      <p class="popup-address">${escapeHTML(address || "Address unavailable")}</p>
+      <div class="popup-grid">
+        <span>Cuisine</span><strong>${escapeHTML(p.cuisine_description || "Not available")}</strong>
+        <span>Campus distance</span><strong>${Number(p.distance_m).toLocaleString()} m</strong>
+        <span>Nearest access point</span><strong>${escapeHTML(p.nearest_gate || "Not available")}</strong>
+        <span>Gate distance proxy</span><strong>${p.gate_distance_m ? `${Number(p.gate_distance_m).toLocaleString()} m` : "—"}</strong>
+        <span>Inspection grade</span><strong>${escapeHTML(p.grade || "Not available")}</strong>
+        <span>Inspection date</span><strong>${escapeHTML(inspectionDate)}</strong>
+        <span>Data source</span><strong>${escapeHTML(sourceLabel)}</strong>
+      </div>
+      <p class="popup-note">Distances and corridor assignments are analytical proxies—not platform delivery estimates.</p>
+    </article>
+  `;
+}
+
+function setPresentationMode(active) {
+  document.body.classList.toggle("presentation-mode", active);
+  exitPresentationButton.hidden = !active;
+  if (active && state.map) {
+    state.map.flyTo({ ...CAMPUS_VIEW, duration: 1100 });
+  }
 }
 
 function addInteractions(map) {
@@ -581,32 +692,9 @@ function addInteractions(map) {
   map.on("click", "restaurants", event => {
     const feature = event.features?.[0];
     if (!feature) return;
-
-    const p = feature.properties;
-    const address = [p.building, p.street, p.zipcode].filter(Boolean).join(" ");
-    const inspectionDate = p.inspection_date
-      ? new Date(p.inspection_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-      : "Not available";
-
-    new mapboxgl.Popup({ offset: 15, maxWidth: "330px" })
+    new mapboxgl.Popup({ offset: 15, maxWidth: "340px" })
       .setLngLat(feature.geometry.coordinates.slice())
-      .setHTML(`
-        <article class="popup">
-          <p class="popup-kicker">${escapeHTML(p.food_group)} · ${escapeHTML(p.corridor_proxy)}</p>
-          <h3>${escapeHTML(p.dba || "Restaurant")}</h3>
-          <p class="popup-address">${escapeHTML(address || "Address unavailable")}</p>
-          <div class="popup-grid">
-            <span>Cuisine</span><strong>${escapeHTML(p.cuisine_description || "Not available")}</strong>
-            <span>Campus distance</span><strong>${Number(p.distance_m).toLocaleString()} m</strong>
-            <span>Nearest access point</span><strong>${escapeHTML(p.nearest_gate || "Not available")}</strong>
-            <span>Gate distance proxy</span><strong>${p.gate_distance_m ? `${Number(p.gate_distance_m).toLocaleString()} m` : "—"}</strong>
-            <span>Inspection grade</span><strong>${escapeHTML(p.grade || "Pending / unavailable")}</strong>
-            <span>Inspection score</span><strong>${escapeHTML(p.score || "Not available")}</strong>
-            <span>Inspection date</span><strong>${escapeHTML(inspectionDate)}</strong>
-          </div>
-          <p class="popup-note">Distances and street-corridor assignments are analytical proxies, not platform delivery estimates.</p>
-        </article>
-      `)
+      .setHTML(buildPopupHTML(feature))
       .addTo(map);
   });
 
@@ -633,6 +721,8 @@ function addInteractions(map) {
 
   document.getElementById("campus-view").addEventListener("click", () => map.flyTo(CAMPUS_VIEW));
   document.getElementById("district-view").addEventListener("click", () => map.flyTo(DISTRICT_VIEW));
+  document.getElementById("presentation-mode").addEventListener("click", () => setPresentationMode(true));
+  exitPresentationButton.addEventListener("click", () => setPresentationMode(false));
 
   document.getElementById("toggle-context").addEventListener("change", event => {
     const visibility = event.target.checked ? "visible" : "none";
@@ -655,37 +745,40 @@ function addInteractions(map) {
       if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", "visible");
     });
     setDisplayMode("points");
+    setPresentationMode(false);
     updateFilters();
     map.flyTo(CAMPUS_VIEW);
   });
 
-  document.getElementById("export-data").addEventListener("click", () => {
-    const data = {
-      type: "FeatureCollection",
-      name: "Visible Columbia restaurant access records",
-      generated_at: new Date().toISOString(),
-      filters: {
-        cuisine: state.selectedCuisine,
-        radius_m: state.selectedRadius,
-        grade: state.selectedGrade,
-        corridor: state.selectedCorridor
-      },
-      features: visibleRestaurants()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/geo+json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "columbia_visible_restaurants.geojson";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+  document.addEventListener("keydown", event => {
+    if (event.key.toLowerCase() === "p" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      setPresentationMode(!document.body.classList.contains("presentation-mode"));
+    }
+    if (event.key === "Escape") setPresentationMode(false);
   });
 }
 
+async function loadRestaurantData() {
+  try {
+    setStatus("Loading a lightweight NYC restaurant query…");
+    const liveData = await fetchJSON(RESTAURANT_API, 9000);
+    const liveRestaurants = processRestaurantData(liveData, "live");
+    if (liveRestaurants.length < 10) throw new Error("The live query returned too few usable restaurant locations.");
+    setDataMode("live");
+    state.dataWarning = "";
+    return liveRestaurants;
+  } catch (liveError) {
+    console.warn("Live restaurant data unavailable; loading local fallback.", liveError);
+    const fallbackData = await fetchJSON(FALLBACK_RESTAURANTS_PATH, 6000);
+    const fallbackRestaurants = processRestaurantData(fallbackData, "fallback");
+    if (!fallbackRestaurants.length) throw new Error("The live API and local fallback both returned no usable restaurants.");
+    setDataMode("fallback");
+    state.dataWarning = "Live NYC API unavailable; showing the local presentation fallback.";
+    return fallbackRestaurants;
+  }
+}
+
 async function initializeMap(token) {
-  tokenPanel.hidden = true;
   mapboxgl.accessToken = token;
 
   const map = new mapboxgl.Map({
@@ -695,13 +788,14 @@ async function initializeMap(token) {
     zoom: CAMPUS_VIEW.zoom,
     pitch: CAMPUS_VIEW.pitch,
     bearing: CAMPUS_VIEW.bearing,
-    antialias: true
+    antialias: true,
+    attributionControl: true
   });
 
   state.map = map;
   map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "bottom-right");
   map.addControl(new mapboxgl.FullscreenControl(), "bottom-right");
-  map.addControl(new mapboxgl.ScaleControl({ maxWidth: 100, unit: "metric" }), "bottom-left");
+  map.addControl(new mapboxgl.ScaleControl({ maxWidth: 95, unit: "metric" }), "bottom-left");
 
   map.on("error", event => {
     if (event?.error) console.error("Mapbox error:", event.error);
@@ -709,26 +803,17 @@ async function initializeMap(token) {
 
   map.on("load", async () => {
     try {
-      setStatus("Loading NYC restaurant GeoJSON…");
-      const [contextData, rawRestaurants] = await Promise.all([
-        fetchJSON(CONTEXT_PATH),
-        fetchJSON(RESTAURANT_API)
-      ]);
-
-      state.contextData = contextData;
-      state.restaurants = processRestaurantData(rawRestaurants);
-      if (!state.restaurants.length) {
-        throw new Error("The restaurant API returned no usable locations around Columbia.");
-      }
-
-      addMapLayers(map, contextData, state.restaurants);
+      setStatus("Loading the Columbia context GeoJSON…");
+      state.contextData = await fetchJSON(CONTEXT_PATH, 7000);
+      state.restaurants = await loadRestaurantData();
+      addMapLayers(map, state.contextData, state.restaurants);
       addInteractions(map);
       setDisplayMode("points");
       updateFilters();
     } catch (error) {
       console.error(error);
-      showError(
-        "The local context or NYC Open Data GeoJSON could not be loaded. Run the project with Live Server and confirm that the browser can reach data.cityofnewyork.us. " +
+      showFatalError(
+        "The local GeoJSON files could not be loaded. Open the full project folder with VS Code Live Server or publish it through GitHub Pages. " +
         error.message
       );
     }
@@ -736,33 +821,14 @@ async function initializeMap(token) {
 }
 
 function begin() {
-  const hardcodedToken = validToken(MAPBOX_TOKEN) ? MAPBOX_TOKEN : null;
-  const savedToken = localStorage.getItem("columbia_mapbox_token");
-  const activeToken = hardcodedToken || (validToken(savedToken) ? savedToken : null);
+  setDataMode("unknown");
 
-  if (activeToken) {
-    initializeMap(activeToken);
+  if (!validToken(MAPBOX_TOKEN)) {
+    showFatalError("A valid public Mapbox token is required in mapBox_Sketch_03.js.");
     return;
   }
 
-  tokenPanel.hidden = false;
-  setStatus("Add a complete public Mapbox token to start the map.");
-
-  const start = () => {
-    const token = tokenInput.value.replace(/\s+/g, "").trim();
-    if (!validToken(token)) {
-      tokenError.textContent = "Paste the complete public token. It must begin with pk. and cannot contain an ellipsis.";
-      return;
-    }
-    tokenError.textContent = "";
-    localStorage.setItem("columbia_mapbox_token", token);
-    initializeMap(token);
-  };
-
-  document.getElementById("start-map").addEventListener("click", start);
-  tokenInput.addEventListener("keydown", event => {
-    if (event.key === "Enter") start();
-  });
+  initializeMap(MAPBOX_TOKEN);
 }
 
 begin();
